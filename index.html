@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Do I Need an Umbrella?</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #00b4db, #0083b0);
+            color: white;
+        }
+        .widget {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 80%;
+            width: 400px;
+        }
+        .result {
+            font-size: 1.5rem;
+            margin: 1rem 0;
+            font-weight: bold;
+        }
+        .weather-info {
+            margin-top: 1rem;
+            font-size: 1.1rem;
+        }
+        .location {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            opacity: 0.9;
+        }
+        .umbrella-icon {
+            font-size: 3rem;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="widget">
+        <div class="location">Langwarrin, Melbourne</div>
+        <div class="umbrella-icon" id="icon">🌂</div>
+        <div class="result" id="result">Checking weather...</div>
+        <div class="weather-info" id="weather-info"></div>
+    </div>
+
+    <script>
+        const API_KEY = 'e3b077e805643b5a03944cff5cf36d4f';
+        const LOCATION = '-38.1317,145.1867'; // Langwarrin coordinates
+
+        async function checkWeather() {
+            try {
+                const response = await fetch(`https://api.openweathermap.org/data/2.5/forecast?lat=-38.1317&lon=145.1867&appid=${API_KEY}&units=metric`);
+                const data = await response.json();
+                
+                // Get morning forecast (9 AM)
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                const tomorrowMorning = tomorrow.toISOString().split('T')[0] + ' 09:00:00';
+                
+                const morningForecast = data.list.find(item => 
+                    item.dt_txt.includes(tomorrow.toISOString().split('T')[0])
+                );
+
+                if (!morningForecast) {
+                    throw new Error('Could not fetch tomorrow\'s forecast');
+                }
+
+                const willRain = morningForecast.weather[0].main.toLowerCase().includes('rain') || 
+                               morningForecast.pop > 0.3;
+
+                const result = document.getElementById('result');
+                const icon = document.getElementById('icon');
+                const weatherInfo = document.getElementById('weather-info');
+
+                if (willRain) {
+                    result.textContent = 'Yes, bring an umbrella! ☔';
+                    icon.textContent = '☔';
+                } else {
+                    result.textContent = 'No umbrella needed today! 🌞';
+                    icon.textContent = '🌞';
+                }
+
+                weatherInfo.textContent = `${morningForecast.weather[0].description} • ${Math.round(morningForecast.main.temp)}°C`;
+
+            } catch (error) {
+                document.getElementById('result').textContent = 'Error checking weather';
+                console.error('Error:', error);
+            }
+        }
+
+        // Check weather immediately and then every hour
+        checkWeather();
+        setInterval(checkWeather, 3600000);
+    </script>
+</body>
+</html>
